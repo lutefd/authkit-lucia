@@ -1,9 +1,14 @@
+import { readSession } from '@/actions/session';
 import { DEFAULT_LOGIN_REDIRECT } from '@/routes';
-import { auth } from '@/server/auth';
+import { validateRequest } from '@/server/auth';
 import { redirect } from 'next/navigation';
 
 const AuthLayout = async ({ children }: { children: React.ReactNode }) => {
-	const session = await auth();
+	const { user, session } = await validateRequest();
+
+	if (user) {
+		redirect(DEFAULT_LOGIN_REDIRECT);
+	}
 	if (session) {
 		redirect(DEFAULT_LOGIN_REDIRECT);
 	}
