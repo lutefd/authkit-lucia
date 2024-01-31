@@ -3,17 +3,15 @@
 import { usePathname } from 'next/navigation';
 import {
 	NavigationMenu,
-	NavigationMenuContent,
 	NavigationMenuItem,
-	NavigationMenuLink,
 	NavigationMenuList,
-	NavigationMenuTrigger,
 	navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
 import Link from 'next/link';
 import UserBtn from '@/components/auth/UserBtn';
+import { DatabaseUserAttributes } from '@/server/auth';
 
-function Navbar() {
+function Navbar({ user }: { user: DatabaseUserAttributes }) {
 	const pathname = usePathname();
 	return (
 		<div className="bg-white flex justify-between items-center p-4 rounded-xl max-w-[600px] w-[600px] shadow-sm">
@@ -26,15 +24,6 @@ function Navbar() {
 							href="/server"
 						>
 							Servidor
-						</Link>
-					</NavigationMenuItem>
-					<NavigationMenuItem>
-						{' '}
-						<Link
-							className={navigationMenuTriggerStyle()}
-							href="/client"
-						>
-							Cliente
 						</Link>
 					</NavigationMenuItem>
 					<NavigationMenuItem>
@@ -57,7 +46,7 @@ function Navbar() {
 					</NavigationMenuItem>
 				</NavigationMenuList>
 			</NavigationMenu>
-			<UserBtn />
+			<UserBtn user={user} />
 		</div>
 	);
 }
