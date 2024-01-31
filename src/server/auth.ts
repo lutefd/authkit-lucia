@@ -1,118 +1,103 @@
-import NextAuth, { type DefaultSession } from 'next-auth';
-import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { authDb } from './db';
-import authConfig from './auth.config';
-import { getUserById, setDefaultValues } from '@/lib/user';
-import { pgTable } from './db/schema';
+import { Lucia } from 'lucia';
+import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle';
+import { authDb, dbPromise } from './db';
 import {
-	deleteEmailTwoFactorConfirmation,
-	getEmailTwoFactorConfirmation,
-} from '@/lib/two-factor-authentication';
+	type DatabaseUser,
+	sessionTable,
+	users,
+	DatabaseSession,
+} from './db/schema';
+import { cache } from 'react';
+import type { Session, User } from 'lucia';
+import { Google } from 'arctic';
 
-declare module 'next-auth' {
-	interface Session {
-		user: {
-			role: string | null;
-			twoFactorMethod: string | null;
-			isOauth: boolean;
-		} & DefaultSession['user'];
+import { cookies } from 'next/headers';
+import { env } from '@/env';
+const adapter = new DrizzlePostgreSQLAdapter(authDb, sessionTable, users);
+
+export const lucia = new Lucia(adapter, {
+	getUserAttributes(databaseUserAttributes) {
+		return {
+			email: databaseUserAttributes.email,
+			image: databaseUserAttributes.image,
+			role: databaseUserAttributes.role,
+			status: databaseUserAttributes.status,
+			two_factor_method: databaseUserAttributes.two_factor_method,
+			name: databaseUserAttributes.name,
+		};
+	},
+	sessionCookie: {
+		expires: false,
+		attributes: {
+			secure: process.env.NODE_ENV === 'production',
+		},
+	},
+	getSessionAttributes(databaseSessionAttributes) {
+		return {
+			// userId: databaseSessionAttributes.userId,
+			is_oauth: databaseSessionAttributes.is_oauth,
+		};
+	},
+});
+export const validateRequest = cache(
+	async (): Promise<
+		{ user: User; session: Session } | { user: null; session: null }
+	> => {
+		const sessionId = cookies().get(lucia.sessionCookieName)?.value ?? null;
+		sessionId;
+		if (!sessionId) {
+			return {
+				user: null,
+				session: null,
+			};
+		}
+
+		const result = await lucia.validateSession(sessionId);
+		result;
+		try {
+			if (result.session && result.session.fresh) {
+				const sessionCookie = lucia.createSessionCookie(
+					result.session.id
+				);
+				cookies().set(
+					sessionCookie.name,
+					sessionCookie.value,
+					sessionCookie.attributes
+				);
+			}
+			if (!result.session) {
+				const sessionCookie = lucia.createBlankSessionCookie();
+				cookies().set(
+					sessionCookie.name,
+					sessionCookie.value,
+					sessionCookie.attributes
+				);
+			}
+		} catch {}
+		return result;
+	}
+);
+
+// IMPORTANT!
+declare module 'lucia' {
+	interface Register {
+		Lucia: typeof lucia;
+		DatabaseUserAttributes: DatabaseUserAttributes;
+		DatabaseSessionAttributes: DatabaseSessionAttributes;
 	}
 }
 
-export const {
-	handlers: { GET, POST },
-	auth,
-	signIn,
-	signOut,
-	update,
-} = NextAuth({
-	pages: {
-		signIn: '/auth/login',
-		error: '/auth/error',
-	},
-	events: {
-		async linkAccount({ user }) {
-			await setDefaultValues(user.id);
-		},
-	},
-	callbacks: {
-		async signIn({ user, account }) {
-			const existingUser = await getUserById(user.id);
-			if (existingUser?.status == 'BLOCKED') {
-				return false;
-			}
-			if (account?.provider != 'credentials') {
-				return true;
-			}
-			if (!existingUser?.emailVerified) return false;
+interface DatabaseSessionAttributes {
+	is_oauth: boolean;
+}
 
-			if (existingUser.two_factor_method == 'EMAIL') {
-				const twoFactorConfirmation =
-					await getEmailTwoFactorConfirmation(existingUser.id);
-				if (!twoFactorConfirmation) {
-					return false;
-				}
-				await deleteEmailTwoFactorConfirmation(existingUser.id);
-			}
+export type DatabaseUserAttributes = Omit<
+	DatabaseUser,
+	'password' | 'two_factor_secret' | 'emailVerified'
+>;
 
-			return true;
-		},
-
-		async session({ session, token }) {
-			if (token.sub && session.user) {
-				session.user.id = token.sub;
-				session.user.name = token.name;
-				session.user.email = token.email;
-				session.user.image = token.image as unknown as
-					| string
-					| null
-					| undefined;
-				session.user.isOauth = token.isOauth as unknown as boolean;
-			}
-			if (token.role && session.user) {
-				session.user.role = token.role as 'ADMIN' | 'USER' | null;
-			}
-			if (token.twoFactorMethod && session.user) {
-				session.user.twoFactorMethod = token.twoFactorMethod as
-					| 'NONE'
-					| 'EMAIL'
-					| 'AUTHENTICATOR'
-					| null;
-			}
-
-			return session;
-		},
-
-		async jwt({ token, account }) {
-			if (!token.sub) return token;
-			if (account) {
-				if (
-					account?.provider == 'credentials' ||
-					account?.provider == null ||
-					account == undefined ||
-					account == null
-				) {
-					token.isOauth = false;
-				} else {
-					token.isOauth = true;
-				}
-			}
-			const user = await getUserById(token.sub);
-			if (!user) return token;
-
-			token.twoFactorMethod = user.two_factor_method;
-			token.role = user.role;
-			token.name = user.name;
-			token.email = user.email;
-			token.image = user.image;
-
-			return token;
-		},
-	},
-	adapter: DrizzleAdapter(authDb, pgTable),
-	session: {
-		strategy: 'jwt',
-	},
-	trustHost: true,
-	...authConfig,
-});
+export const google = new Google(
+	env.GOOGLE_CLIENT_ID,
+	env.GOOGLE_CLIENT_SECRET,
+	'http://localhost:3000/api/auth/google/callback'
+);
