@@ -221,7 +221,6 @@ export async function GET(request: Request) {
 			}
 		}
 	} catch (e) {
-		console.log(e);
 		if (
 			e instanceof OAuth2RequestError &&
 			e.message === 'bad_verification_code'
