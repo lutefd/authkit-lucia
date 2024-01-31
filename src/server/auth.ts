@@ -9,7 +9,7 @@ import {
 } from './db/schema';
 import { cache } from 'react';
 import type { Session, User } from 'lucia';
-import { Google } from 'arctic';
+import { GitHub, Google } from 'arctic';
 
 import { cookies } from 'next/headers';
 import { env } from '@/env';
@@ -100,4 +100,8 @@ export const google = new Google(
 	env.GOOGLE_CLIENT_ID,
 	env.GOOGLE_CLIENT_SECRET,
 	'http://localhost:3000/api/auth/google/callback'
+);
+export const github = new GitHub(
+	env.GITHUB_CLIENT_ID,
+	env.GITHUB_CLIENT_SECRET
 );
