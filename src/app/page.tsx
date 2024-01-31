@@ -1,6 +1,6 @@
-import LoginBtn from '@/components/auth/LoginBtn';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { LockKeyhole } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
 	return (
@@ -16,11 +16,15 @@ export default function Home() {
 					Ponto inicial do serviço de autenticação
 				</p>
 				<div className="">
-					<LoginBtn>
-						<Button variant="secondary" size="lg">
-							Login
-						</Button>
-					</LoginBtn>
+					<Link
+						className={buttonVariants({
+							variant: 'secondary',
+							size: 'lg',
+						})}
+						href={'/auth/login'}
+					>
+						Login
+					</Link>
 				</div>
 			</div>
 		</main>
