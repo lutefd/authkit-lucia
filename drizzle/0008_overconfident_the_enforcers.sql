@@ -1,1 +1,0 @@
-ALTER TABLE "project1_session" ADD COLUMN "is_oauth" boolean;
