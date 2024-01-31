@@ -1,10 +1,11 @@
+import { readSession } from '@/actions/session';
 import AdminView from '@/components/AdminView';
-import { RoleGate } from '@/components/auth/RoleGate';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+
 import React from 'react';
 
-function AdminPage() {
-	return <AdminView />;
+async function AdminPage() {
+	const { user } = await readSession();
+	return <AdminView user={user} />;
 }
 
 export default AdminPage;
