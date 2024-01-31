@@ -33,6 +33,11 @@ export const reset = async (values: z.infer<typeof ResetSchema>) => {
 			error: 'Email não encontrado',
 		};
 	}
+	if (existingUser.password === null) {
+		return {
+			error: 'Usuário não cadastrado por credenciais. Você provavelmente se cadastrou por um provedor de Oauth.',
+		};
+	}
 	const passwordResetToken = await generatePasswordResetToken(email);
 	await sendPasswordResetEmail(email, passwordResetToken[0].token);
 	return {
