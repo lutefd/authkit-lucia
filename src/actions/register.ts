@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { users } from '@/server/db/schema';
 import { generateVerificationToken } from '@/lib/token';
 import { sendVerificationEmail } from './email';
+import { Argon2id } from 'oslo/password';
 
 /**
  * Registers a new user account
@@ -19,7 +20,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
 
 	if (!validateFields.success) {
 		return {
-			error: 'Ocorreu um erro ao realizar o cadastro  ',
+			error: 'Ocorreu um erro ao realizar o cadastro',
 		};
 	}
 	const {
@@ -28,7 +29,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
 		name: inputName,
 	} = validateFields.data;
 
-	const hashPassword = await bcrypt.hash(password, 10);
+	const hashPassword = await new Argon2id().hash(password);
 
 	const existingUser = await db.query.users.findFirst({
 		where: eq(users.email, inputEmail),
@@ -46,6 +47,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
 	};
 	await db.insert(users).values(user);
 	const verificationToken = await generateVerificationToken(inputEmail);
+	verificationToken;
 	await sendVerificationEmail(inputEmail, verificationToken[0].token);
 
 	return {
