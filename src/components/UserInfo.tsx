@@ -1,16 +1,10 @@
-import type { DefaultSession } from 'next-auth';
 import React from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
-
-type ExtendedUser = DefaultSession['user'] & {
-	role: 'ADMIN' | 'USER' | null | string;
-	twoFactorMethod: 'NONE' | 'EMAIL' | 'AUTHENTICATOR' | null | string;
-	isOauth: boolean;
-};
+import { DatabaseUserAttributes } from '@/server/auth';
 
 interface UserInfoProps {
-	user?: ExtendedUser;
+	user: DatabaseUserAttributes | null;
 	label: string;
 }
 
@@ -50,17 +44,17 @@ function UserInfo({ user, label }: UserInfoProps) {
 					<div className="truncate text-sm max-w-[180px]  rounded-md">
 						<Badge
 							variant={
-								user?.twoFactorMethod == 'NONE' ||
-								!user?.twoFactorMethod
+								user?.two_factor_method == 'NONE' ||
+								!user?.two_factor_method
 									? 'destructive'
 									: 'success'
 							}
 						>
 							{' '}
-							{user?.twoFactorMethod == 'NONE' ||
-							!user?.twoFactorMethod
+							{user?.two_factor_method == 'NONE' ||
+							!user?.two_factor_method
 								? 'OFF'
-								: user?.twoFactorMethod}
+								: user?.two_factor_method}
 						</Badge>
 					</div>
 				</div>
