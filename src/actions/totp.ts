@@ -28,7 +28,6 @@ export const verifyTOTP = async (code: string, userId: string) => {
 		code,
 		decodeHex(secret.two_factor_secret)
 	);
-	console.log(validOTP);
 	if (!validOTP) {
 		return {
 			error: 'Código inválido',
