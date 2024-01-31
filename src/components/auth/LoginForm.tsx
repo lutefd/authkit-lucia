@@ -19,6 +19,9 @@ import FormError from '../FormError';
 import FormSuccess from '../FormSuccess';
 import { login } from '@/actions/login';
 import Link from 'next/link';
+import { toast } from 'sonner';
+import { redirect, useRouter } from 'next/navigation';
+import { DEFAULT_LOGIN_REDIRECT } from '@/routes';
 
 function LoginForm() {
 	const [isPending, startTransition] = useTransition();
@@ -32,22 +35,24 @@ function LoginForm() {
 			password: '',
 		},
 	});
+	const router = useRouter();
 
 	const onSubmit = (data: z.infer<typeof LoginSchema>) => {
 		startTransition(() => {
 			setError('');
 			setSuccess('');
 			login(data).then((res) => {
-				if (res.error) {
+				if (res?.error) {
 					form.reset();
 					setError(res?.error);
 					setShowTwoFactor(false);
 				}
-				if (res.success) {
+				if (res?.success) {
 					form.reset();
 					setSuccess(res?.success);
 				}
-				if (res.twoFactor) {
+				if (res?.twoFactor) {
+					toast.success('Código de autenticação enviado!');
 					setShowTwoFactor(true);
 				}
 			});
