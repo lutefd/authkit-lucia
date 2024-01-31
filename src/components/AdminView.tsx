@@ -1,15 +1,14 @@
 'use client';
 import React from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
-import { currentRole } from '@/lib/user';
 import { RoleGate } from './auth/RoleGate';
 import { Button } from './ui/button';
-import { useCurrentRole } from '@/hooks/useCurrentUser';
 import { toast } from 'sonner';
 import { adminDemo } from '@/actions/admin-demo';
 import FormSuccess from './FormSuccess';
+import { DatabaseUserAttributes } from '@/server/auth';
 
-function AdminView() {
+function AdminView({ user }: { user: DatabaseUserAttributes | null }) {
 	const onApiRouteClick = () => {
 		fetch('/api/admin').then((res) => {
 			if (res.ok) {
@@ -35,7 +34,7 @@ function AdminView() {
 				<p className="text-2xl font-semibold text-center">Admin</p>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<RoleGate allowedRole="ADMIN">
+				<RoleGate allowedRole="ADMIN" role={user?.role as string}>
 					<FormSuccess success="Você pode visualizar esse conteúdo" />
 				</RoleGate>
 				<div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-md">
