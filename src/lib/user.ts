@@ -1,4 +1,4 @@
-import { auth } from '@/server/auth';
+import { readSession } from '@/actions/session';
 import { dbPromise } from '@/server/db';
 import { users } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
@@ -128,8 +128,8 @@ export const setUserStatus = async (
  * Returns the User object representing the currently logged in user, or undefined if no user is signed in.
  */
 export const currentUserServer = async () => {
-	const session = await auth();
-	return session?.user;
+	const session = await readSession();
+	return session.user;
 };
 
 /**
@@ -137,6 +137,6 @@ export const currentUserServer = async () => {
  * Returns the User role string of the currently logged in user, or undefined if no user is signed in.
  */
 export const currentRole = async () => {
-	const session = await auth();
-	return session?.user.role;
+	const session = await readSession();
+	return session?.user?.role;
 };
