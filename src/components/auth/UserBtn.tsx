@@ -9,12 +9,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FaUser } from 'react-icons/fa';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import LogoutBtn from './LogoutBtn';
 import { LogOut } from 'lucide-react';
 import { logout } from '@/actions/logout';
-function UserBtn() {
-	const user = useCurrentUser();
+import { DatabaseUserAttributes } from '@/server/auth';
+function UserBtn({ user }: { user: DatabaseUserAttributes }) {
 	const onClick = () => {
 		logout();
 	};
