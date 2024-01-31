@@ -3,17 +3,17 @@
 import { z } from 'zod';
 
 import { SettingsSchema } from '@/schemas';
-import { currentUserServer, getUserByEmail, getUserById } from '@/lib/user';
+import { getUserByEmail, getUserById } from '@/lib/user';
 import { dbPromise } from '@/server/db';
 import { users } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateVerificationToken } from '@/lib/token';
 import { sendVerificationEmail } from './email';
 import bcrypt from 'bcryptjs';
-import { update } from '@/server/auth';
 import crypto from 'node:crypto';
 import { encodeHex } from 'oslo/encoding';
 import { createTOTPKeyURI } from 'oslo/otp';
+import { readSession, updateSession } from './session';
 
 /**
  * Handles setting changes made by the user in the profile page
@@ -21,11 +21,11 @@ import { createTOTPKeyURI } from 'oslo/otp';
  * @param {z.infer<typeof SettingsSchema>} values - The incoming form data as Schema Zod typed object
  */
 export const settings = async (values: z.infer<typeof SettingsSchema>) => {
-	const user = await currentUserServer();
+	const { user, is_oauth } = await readSession();
 	if (!user) return { error: 'Você não está logado' };
 	const dbUser = await getUserById(user.id);
 	if (!dbUser) return { error: 'Usuário não encontrado' };
-	if (user.isOauth) {
+	if (is_oauth) {
 		values.email = undefined;
 		values.password = undefined;
 		values.newPassword = undefined;
@@ -99,6 +99,7 @@ export const settings = async (values: z.infer<typeof SettingsSchema>) => {
 	}
 
 	await db.update(users).set(values).where(eq(users.id, user.id));
+	await updateSession();
 
 	return { success: 'Dados atualizados com sucesso' };
 };
