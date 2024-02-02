@@ -49,6 +49,15 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 			error: 'Tenha certeza que você se cadastrou com o email e senha',
 		};
 	}
+	const validPassword = await new Argon2id().verify(
+		existingUser.password,
+		password
+	);
+	if (!validPassword) {
+		return {
+			error: 'Email ou Senha inválidos',
+		};
+	}
 	if (!existingUser.emailVerified) {
 		const verificationToken = await generateVerificationToken(email);
 		await sendVerificationEmail(email, verificationToken[0].token);
@@ -58,15 +67,6 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 	}
 
 	if (existingUser.two_factor_method == 'EMAIL') {
-		const passwordsMatch = await new Argon2id().verify(
-			existingUser.password,
-			password
-		);
-		if (!passwordsMatch) {
-			return {
-				error: 'Email ou senha incorretos',
-			};
-		}
 		if (code) {
 			const twoFactorToken = await getEmailTwoFactorTokenByEmail(
 				existingUser.email
@@ -107,15 +107,6 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 	}
 
 	if (existingUser.two_factor_method == 'AUTHENTICATOR') {
-		const passwordsMatch = await new Argon2id().verify(
-			existingUser.password,
-			password
-		);
-		if (!passwordsMatch) {
-			return {
-				error: 'Email ou senha incorretos',
-			};
-		}
 		if (code) {
 			const result = await verifyTOTP(code, existingUser.id);
 			if (result.error) {
@@ -130,15 +121,6 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 		}
 	}
 
-	const validPassword = await new Argon2id().verify(
-		existingUser.password,
-		password
-	);
-	if (!validPassword) {
-		return {
-			error: 'Senha inválida',
-		};
-	}
 	if (validPassword) {
 		const session = await lucia.createSession(existingUser.id, {
 			is_oauth: false,
