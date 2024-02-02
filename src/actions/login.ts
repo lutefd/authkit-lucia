@@ -58,17 +58,16 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 	}
 
 	if (existingUser.two_factor_method == 'EMAIL') {
+		const passwordsMatch = await new Argon2id().verify(
+			existingUser.password,
+			password
+		);
+		if (!passwordsMatch) {
+			return {
+				error: 'Email ou senha incorretos',
+			};
+		}
 		if (code) {
-			const passwordsMatch = await new Argon2id().verify(
-				existingUser.password,
-				password
-			);
-			if (!passwordsMatch) {
-				return {
-					error: 'Email ou senha incorretos',
-				};
-			}
-
 			const twoFactorToken = await getEmailTwoFactorTokenByEmail(
 				existingUser.email
 			);
@@ -108,6 +107,15 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 	}
 
 	if (existingUser.two_factor_method == 'AUTHENTICATOR') {
+		const passwordsMatch = await new Argon2id().verify(
+			existingUser.password,
+			password
+		);
+		if (!passwordsMatch) {
+			return {
+				error: 'Email ou senha incorretos',
+			};
+		}
 		if (code) {
 			const result = await verifyTOTP(code, existingUser.id);
 			if (result.error) {
